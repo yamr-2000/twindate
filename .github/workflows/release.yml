@@ -40,16 +40,18 @@ jobs:
       - name: Build APK via EAS
         id: eas_build
         run: |
-          BUILD_OUTPUT=$(eas build \
+          eas build \
             --platform android \
             --profile preview \
             --non-interactive \
-            --json 2>&1 | tee /dev/stderr | tail -n 1)
+            --json > eas_output.json 2>&1 || true
 
-          ARTIFACT_URL=$(echo "$BUILD_OUTPUT" | jq -r '.[0].artifacts.buildUrl // empty')
+          cat eas_output.json
+
+          ARTIFACT_URL=$(grep -o '"buildUrl":"[^"]*"' eas_output.json | head -1 | cut -d'"' -f4)
+
           if [ -z "$ARTIFACT_URL" ]; then
             echo "ERROR: Could not extract artifact URL from EAS output"
-            echo "$BUILD_OUTPUT"
             exit 1
           fi
 
