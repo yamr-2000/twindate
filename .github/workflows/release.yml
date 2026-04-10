@@ -1,0 +1,86 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    name: Build Android APK & Create Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK via EAS
+        id: eas_build
+        run: |
+          BUILD_OUTPUT=$(eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --json 2>&1 | tee /dev/stderr | tail -n 1)
+
+          ARTIFACT_URL=$(echo "$BUILD_OUTPUT" | jq -r '.[0].artifacts.buildUrl // empty')
+          if [ -z "$ARTIFACT_URL" ]; then
+            echo "ERROR: Could not extract artifact URL from EAS output"
+            echo "$BUILD_OUTPUT"
+            exit 1
+          fi
+
+          echo "artifact_url=$ARTIFACT_URL" >> "$GITHUB_OUTPUT"
+          echo "Artifact URL: $ARTIFACT_URL"
+
+      - name: Download APK
+        run: |
+          curl -L -o twindate.apk "${{ steps.eas_build.outputs.artifact_url }}"
+          ls -lh twindate.apk
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          VERSION=$(jq -r '.expo.version' app.json)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          DATE=$(date -u +%Y%m%d)
+          TAG="v${VERSION}-${DATE}-${SHORT_SHA}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "TwinDate ${{ steps.tag.outputs.tag }}"
+          body: |
+            **Automated build from `main`**
+
+            - Commit: ${{ github.sha }}
+            - Built with EAS preview profile (APK)
+            - Triggered by: @${{ github.actor }}
+          files: twindate.apk
+          generate_release_notes: true

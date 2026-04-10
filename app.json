@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "TwinDate",
+    "slug": "twindate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "scheme": "twindate",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#6C3AE1"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.twindate.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#6C3AE1"
+      },
+      "package": "com.twindate.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}
