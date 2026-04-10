@@ -39,6 +39,13 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2e41f52e-4da9-4b05-9d61-fe46822f64fd"
+      }
+    },
+    "owner": "yamr-2000"
   }
 }
